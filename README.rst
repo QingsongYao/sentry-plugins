@@ -27,13 +27,18 @@ GitHub
 
 You'll have to create an application in GitHub to get the app ID and API secret. Use the following for the Authentication redirect URL::
 
-    <URL_TO_SENTRY>/account/settings/social/associate/complete/github/
+    <URL_TO_SENTRY>/
 
 Ensure you've configured GitHub auth in Sentry::
 
     GITHUB_APP_ID = 'GitHub Application Client ID'
     GITHUB_API_SECRET = 'GitHub Application Client Secret'
     GITHUB_EXTENDED_PERMISSIONS = ['repo']
+
+For using Github Enterprise, please configure follow two environment variables::
+
+    GITHUB_BASE_DOMAIN = 'the domain name of your instance without https://'
+    GITHUB_API_DOMAIN = 'the API url, which is usually GITHUB_BASE_DOMAIN/api/v3'
 
 If the callback URL you've registered with Github uses HTTPS, you'll need this in your config::
 

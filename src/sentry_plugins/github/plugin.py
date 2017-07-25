@@ -1,9 +1,11 @@
+
 from __future__ import absolute_import
 
 import logging
 import six
 
 from rest_framework.response import Response
+from django.conf import settings
 from uuid import uuid4
 
 from sentry.app import locks
@@ -62,9 +64,14 @@ class GitHubMixin(object):
 
     def get_client(self, user):
         auth = self.get_auth(user=user)
+
         if auth is None:
             raise PluginError(ERR_UNAUTHORIZED)
-        return GitHubClient(token=auth.tokens['access_token'])
+
+        url = getattr(settings, 'GITHUB_API_DOMAIN', None)
+        if url:
+            url = 'https://{0}'.format(url)
+        return GitHubClient(url=url, token=auth.tokens['access_token'])
 
 
 # TODO(dcramer): half of this plugin is for the issue tracking integration
@@ -195,8 +202,8 @@ class GitHubPlugin(CorePluginMixin, GitHubMixin, IssuePlugin2):
     def get_issue_url(self, group, issue_id, **kwargs):
         # XXX: get_option may need tweaked in Sentry so that it can be pre-fetched in bulk
         repo = self.get_option('repo', group.project)
-
-        return 'https://github.com/%s/issues/%s' % (repo, issue_id)
+        url = getattr(settings, 'GITHUB_BASE_DOMAIN', 'github.com')
+        return 'https://%s/%s/issues/%s' % (url, repo, issue_id)
 
     def view_autocomplete(self, request, group, **kwargs):
         field = request.GET.get('autocomplete_field')
@@ -310,10 +317,11 @@ class GitHubRepositoryProvider(GitHubMixin, providers.RepositoryProvider):
         except Exception as e:
             self.raise_error(e)
         else:
+            base_url = getattr(settings, 'GITHUB_BASE_DOMAIN', 'github.com')
             return {
                 'name': data['name'],
                 'external_id': data['external_id'],
-                'url': 'https://github.com/{}'.format(data['name']),
+                'url': 'https://{0}/{1}'.format(base_url, data['name']),
                 'config': {
                     'name': data['name'],
                     'webhook_id': resp['id'],
